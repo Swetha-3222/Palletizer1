@@ -423,6 +423,24 @@ for bcode, dims in DEFAULT_BOXES.items():
 pallets, pallet_layers = pack_all_pallets(pallet, boxes_for_packing, order_counts)
 total_pallets = len(pallet_layers)
 
+# -------------------- ✅ Reorder layers so AZ17 is on TOP when mixed --------------------
+for p_idx, layers in enumerate(pallet_layers):
+    # Collect set of box codes in this pallet
+    all_codes = {b['name'] for layer in layers for b in layer}
+    # If pallet only has AZ17 -> no change
+    if all_codes == {"AZ17"}:
+        continue
+    # Otherwise, move any layer containing AZ17 to the top (preserve relative order within groups)
+    az17_layers = []
+    other_layers = []
+    for layer in layers:
+        layer_codes = {b['name'] for b in layer}
+        if "AZ17" in layer_codes:
+            az17_layers.append(layer)
+        else:
+            other_layers.append(layer)
+    pallet_layers[p_idx] = other_layers + az17_layers
+
 # -------------------- Prepare PDFs --------------------
 assigned_layers_per_pallet = []
 summary_per_pallet = []
